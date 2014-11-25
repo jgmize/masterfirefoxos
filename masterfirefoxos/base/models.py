@@ -29,6 +29,8 @@ Page.register_templates(
 
 
 class YouTubeParagraphEntry(models.Model):
+    _translatable_fields = ['title', 'text']
+
     title = models.CharField(max_length=255)
     text = models.TextField()
     youtube_id = models.CharField(max_length=100)
@@ -48,6 +50,8 @@ class YouTubeParagraphEntry(models.Model):
 
 
 class MediaParagraphEntry(MediaFileContent):
+    _translatable_fields = ['title', 'text']
+
     title = models.CharField(max_length=255)
     text = models.TextField()
 
@@ -66,6 +70,8 @@ class MediaParagraphEntry(MediaFileContent):
 
 
 class FAQEntry(models.Model):
+    _translatable_fields = ['question', 'answer']
+
     question = models.CharField(max_length=255)
     answer = models.CharField(max_length=255)
 
