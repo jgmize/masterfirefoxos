@@ -117,3 +117,5 @@ feedparser==5.1.3
 # sha256: clGEm-hrnuwAgsKujDTMJ3Y8Mfzts66KMDST95y-x-0
 django-zurb-foundation==5.4.5
 
+# sha256: F3KVsUQkAMks22fo4Y-f9ZRvtEL4WBO50IN4I3IuoI0
+django-cronjobs==0.2.3
