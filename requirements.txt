@@ -119,3 +119,9 @@ pytest==2.6.4
 
 # sha256: 5vBgp2ziAlqrrrblVCVpuSBnlPrDKKBm6vAsU17wXQI
 pytest-django==2.7.0
+
+# sha256: -s_gx8zq_Uno9-RyERKUVmYF_f3cIwEdoGzDpGAcn30
+six==1.8.0
+
+# sha256: Mfw1XHE1TVYJWPhskeGAvivHbGHBiaqG6Gm0nbOrDfU
+django-extensions==1.4.9
