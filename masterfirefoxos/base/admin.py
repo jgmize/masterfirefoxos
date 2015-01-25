@@ -3,10 +3,8 @@ from django.contrib import admin, messages
 from feincms.module.page.models import Page
 from feincms.module.page.admin import PageAdmin as PageAdminOld
 
+from .models import QuizQuestion, QuizAnswer
 from .utils import copy_tree
-
-
-admin.site.unregister(Page)
 
 
 class PageAdmin(PageAdminOld):
@@ -20,4 +18,17 @@ class PageAdmin(PageAdminOld):
         copy_tree(queryset[0])
     copy_tree_admin_action.short_description = 'Copy tree'
 
+
+class QuizAnswerInline(admin.StackedInline):
+    model = QuizAnswer
+    extra = 0
+
+
+class QuizQuestionAdmin(admin.ModelAdmin):
+    search_fields = ['question']
+    inlines = [QuizAnswerInline]
+
+
+admin.site.unregister(Page)
 admin.site.register(Page, PageAdmin)
+admin.site.register(QuizQuestion, QuizQuestionAdmin)
