@@ -1,3 +1,4 @@
+from functools import lru_cache
 import json
 import os
 
@@ -12,11 +13,21 @@ from masterfirefoxos.base.models import QuizQuestion, QuizAnswer
 import polib
 
 
-def load_topic(language='en', version='1.3T'):
+@lru_cache(maxsize=None)
+def load_json(*args):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           'json', version, language + '.json')) as f:
-        # all content for the legacy site is in a single 'topic'
-        return json.load(f)['modules'][0]['topics'][0]
+                           'json', *args)) as f:
+        return json.load(f)
+
+
+def load_topic(language='en', version='1.3T'):
+    # all content for the legacy site is in a single 'topic'
+    return load_json(
+        version, language + '.json')['modules'][0]['topics'][0]
+
+
+def video_path_to_youtube_id(video_path):
+    return load_json('video_path_to_youtube_id.json').get(video_path)
 
 
 def pwrap(text):
@@ -26,9 +37,13 @@ def pwrap(text):
         return '<p>{}</p>'.format(text)
 
 
+def punwrap(text):
+    return text.replace('<p>', '').replace('</p>', '')
+
+
 def add_richtext(page, text):
     if text:
-        page.richtextentry_set.create(
+        page.richtextentry_set.get_or_create(
             text=pwrap(text), parent=page, region='main')
 
 
@@ -44,28 +59,49 @@ def add_quiz_question(page, component):
         question=question, parent=page, region='main')
 
 
+def pop_page_text(page):
+    entries = page.richtextentry_set.all()[:1]
+    if entries:
+        entry = entries[0]
+        entry.delete()
+        page.richtextentry_set.update()
+        return punwrap(entry.text)
+    return ''
+
+    
+def add_youtube_paragraph(page, component):
+    youtube_id = video_path_to_youtube_id(
+        component['media']['ogv']) or video_path_to_youtube_id(
+        component['media']['mp4']) or 'MISSING'
+    title = component['title'] or pop_page_text(page)
+    text = component['body'] or pop_page_text(page)
+    page.youtubeparagraphentry_set.create(
+        title=title, text=text, youtube_id=youtube_id, parent=page,
+        region='main')
+
+    
 def add_blocks(page, blocks):
     for block in blocks or []:
         add_richtext(page, block['title'])
         for component in block['components']:
-            if component.get('class') in ('nav-next', 'nav-back'):
-                continue
-            elif component['component'] == 'mcq':
-                question = add_quiz_question(page, component)
-                continue
-            add_richtext(page, component['title'])
-            add_richtext(page, component['body'])
-            if component['component'] == 'graphic':
-                # TODO: upload media, use different content type
-                add_richtext(page, component['graphic']['alt'])
-            elif component['component'] in ('reveal', 'hotgraphic'):
-                # TODO: upload media, use different content type
-                add_richtext(page, component['graphic']['title'])
-                add_richtext(page, component['graphic'].get('body'))
-            for item in component.get('items', []):
-                add_richtext(page, item['title'])
-                add_richtext(page, item.get('body'))
-                add_richtext(page, item.get('strapline'))
+            if component['component'] == 'mcq':
+                add_quiz_question(page, component)
+            elif component['component'] == 'media':
+                add_youtube_paragraph(page, component)
+            elif component.get('class') not in ('nav-next', 'nav-back'): 
+                add_richtext(page, component['title'])
+                add_richtext(page, component['body'])
+                if component['component'] == 'graphic':
+                    # TODO: upload media, use different content type
+                    add_richtext(page, component['graphic']['alt'])
+                elif component['component'] in ('reveal', 'hotgraphic'):
+                    # TODO: upload media, use different content type
+                    add_richtext(page, component['graphic']['title'])
+                    add_richtext(page, component['graphic'].get('body'))
+                for item in component.get('items', []):
+                    add_richtext(page, item['title'])
+                    add_richtext(page, item.get('body'))
+                    add_richtext(page, item.get('strapline'))
 
 
 def create_page(title, body='', parent=None, slug='', blocks=None):
