@@ -4,6 +4,7 @@ import os
 
 from django.conf import settings
 from django.core.management import call_command
+from django.db import DataError
 from django.utils.text import slugify
 
 from feincms.module.page.models import Page
@@ -75,9 +76,14 @@ def add_youtube_paragraph(page, component):
         component['media']['mp4']) or 'MISSING'
     title = component['title'] or pop_page_text(page)
     text = component['body'] or pop_page_text(page)
-    page.youtubeparagraphentry_set.create(
-        title=title, text=text, youtube_id=youtube_id, parent=page,
-        region='main')
+    try:
+        page.youtubeparagraphentry_set.create(
+            title=title, text=text, youtube_id=youtube_id, parent=page,
+            region='main')
+    except DataError:
+        page.youtubeparagraphentry_set.create(
+            title=text, text=title, youtube_id=youtube_id, parent=page,
+            region='main')
 
     
 def add_blocks(page, blocks):
